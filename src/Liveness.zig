@@ -216,6 +216,8 @@ pub fn categorizeOperand(
         .atomic_store_release,
         .atomic_store_seq_cst,
         .set_union_tag,
+        .memset,
+        .memcpy,
         => {
             const o = air_datas[inst].bin_op;
             if (o.lhs == operand_ref) return matchOperandSmallIndex(l, inst, 0, .write);
@@ -507,16 +509,6 @@ pub fn categorizeOperand(
             const extra = air.extraData(Air.AtomicRmw, pl_op.payload).data;
             if (pl_op.operand == operand_ref) return matchOperandSmallIndex(l, inst, 0, .write);
             if (extra.operand == operand_ref) return matchOperandSmallIndex(l, inst, 1, .write);
-            return .write;
-        },
-        .memset,
-        .memcpy,
-        => {
-            const pl_op = air_datas[inst].pl_op;
-            const extra = air.extraData(Air.Bin, pl_op.payload).data;
-            if (pl_op.operand == operand_ref) return matchOperandSmallIndex(l, inst, 0, .write);
-            if (extra.lhs == operand_ref) return matchOperandSmallIndex(l, inst, 1, .write);
-            if (extra.rhs == operand_ref) return matchOperandSmallIndex(l, inst, 2, .write);
             return .write;
         },
 
@@ -859,6 +851,8 @@ fn analyzeInst(
         .set_union_tag,
         .min,
         .max,
+        .memset,
+        .memcpy,
         => {
             const o = inst_datas[inst].bin_op;
             return trackOperands(a, new_set, inst, main_tomb, .{ o.lhs, o.rhs, .none });
@@ -1100,13 +1094,6 @@ fn analyzeInst(
             const pl_op = inst_datas[inst].pl_op;
             const extra = a.air.extraData(Air.AtomicRmw, pl_op.payload).data;
             return trackOperands(a, new_set, inst, main_tomb, .{ pl_op.operand, extra.operand, .none });
-        },
-        .memset,
-        .memcpy,
-        => {
-            const pl_op = inst_datas[inst].pl_op;
-            const extra = a.air.extraData(Air.Bin, pl_op.payload).data;
-            return trackOperands(a, new_set, inst, main_tomb, .{ pl_op.operand, extra.lhs, extra.rhs });
         },
 
         .br => {
@@ -1550,6 +1537,8 @@ fn removeInstDeaths(
         .set_union_tag,
         .min,
         .max,
+        .memset,
+        .memcpy,
         => {
             const o = inst_datas[inst].bin_op;
             removeOperandDeaths(a, to_remove, inst, .{ o.lhs, o.rhs, .none });
@@ -1769,13 +1758,6 @@ fn removeInstDeaths(
             const pl_op = inst_datas[inst].pl_op;
             const extra = a.air.extraData(Air.AtomicRmw, pl_op.payload).data;
             removeOperandDeaths(a, to_remove, inst, .{ pl_op.operand, extra.operand, .none });
-        },
-        .memset,
-        .memcpy,
-        => {
-            const pl_op = inst_datas[inst].pl_op;
-            const extra = a.air.extraData(Air.Bin, pl_op.payload).data;
-            removeOperandDeaths(a, to_remove, inst, .{ pl_op.operand, extra.lhs, extra.rhs });
         },
 
         .br => {

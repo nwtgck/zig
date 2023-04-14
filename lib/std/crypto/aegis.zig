@@ -174,7 +174,7 @@ pub const Aegis128L = struct {
             acc |= (computed_tag[j] ^ tag[j]);
         }
         if (acc != 0) {
-            @memset(m.ptr, undefined, m.len);
+            @memset(m, undefined);
             return error.AuthenticationFailed;
         }
     }
@@ -343,7 +343,7 @@ pub const Aegis256 = struct {
             acc |= (computed_tag[j] ^ tag[j]);
         }
         if (acc != 0) {
-            @memset(m.ptr, undefined, m.len);
+            @memset(m, undefined);
             return error.AuthenticationFailed;
         }
     }
